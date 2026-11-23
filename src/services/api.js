@@ -306,10 +306,16 @@ export async function loginUserApi(credentials) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const cleanId = (credentials.identifier || credentials.email || '').trim();
+    const payload = {
+      identifier: cleanId,
+      email: cleanId,
+      password: credentials.password
+    };
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(payload),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -317,9 +323,20 @@ export async function loginUserApi(credentials) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      let errMsg = 'Login failed';
+      if (typeof data.error === 'string') {
+        errMsg = data.error;
+      } else if (data.error?.message) {
+        errMsg = data.error.message;
+      } else if (data.message) {
+        errMsg = data.message;
+      }
+      if (data.error?.details && Array.isArray(data.error.details) && data.error.details.length > 0) {
+        errMsg = data.error.details.map(d => d.message).join(', ');
+      }
       return {
         success: false,
-        error: data.message || `Login failed with status ${response.status}`,
+        error: errMsg,
         isBackendResponse: true
       };
     }
@@ -337,10 +354,24 @@ export async function registerUserApi(userData) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const cleanName = (userData.fullName || userData.name || '').trim();
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+    const payload = {
+      name: cleanName,
+      fullName: cleanName,
+      email: cleanEmail,
+      studentId: (userData.studentId || '').trim(),
+      password: userData.password,
+      confirmPassword: userData.confirmPassword || userData.password,
+      department: userData.department,
+      batch: userData.batch,
+      contact: (userData.phone || userData.contact || '').trim(),
+      phone: (userData.phone || userData.contact || '').trim()
+    };
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
+      body: JSON.stringify(payload),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -348,9 +379,20 @@ export async function registerUserApi(userData) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      let errMsg = 'Registration failed';
+      if (typeof data.error === 'string') {
+        errMsg = data.error;
+      } else if (data.error?.message) {
+        errMsg = data.error.message;
+      } else if (data.message) {
+        errMsg = data.message;
+      }
+      if (data.error?.details && Array.isArray(data.error.details) && data.error.details.length > 0) {
+        errMsg = data.error.details.map(d => d.message).join(', ');
+      }
       return {
         success: false,
-        error: data.message || `Registration failed with status ${response.status}`,
+        error: errMsg,
         isBackendResponse: true
       };
     }
