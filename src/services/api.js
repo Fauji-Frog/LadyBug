@@ -2,29 +2,20 @@
 // ReLeaf – API Client & Backend Integration Layer
 // Target Base URL: http://localhost:5000/api
 //
-// Documented Endpoints:
-// - GET  /books
-// - GET  /books?status=available
-// - GET  /books?status=wanted
+// Endpoints Integrated:
+// - GET  /books (and /books?status=available, /books?status=wanted)
 // - POST /listings/available
 // - POST /listings/wanted
-// - GET  /matches
-//
-// Authentication Integration Points:
-// - POST /auth/login (optional backend route)
-// - POST /auth/register (optional backend route)
-//
-// This service transparently checks backend health. If the backend at
-// http://localhost:5000/api is offline or unreachable, it falls back
-// to a local persistent storage store so UI development and testing
-// remain 100% interactive and stable, while clearly surfacing connection state.
+// - POST /matches/run
+// - GET  /matches (and /matches/:studentId)
+// - POST /auth/login
+// - POST /auth/register
 // ===================================================================
 
 import { INITIAL_BOOKS, INITIAL_MATCHES } from '../data/mockData';
 
 export const API_BASE_URL = 'http://localhost:5000/api';
 
-// Helper to check local storage
 const LOCAL_STORAGE_KEY_BOOKS = 'releaf_books_store';
 const LOCAL_STORAGE_KEY_MATCHES = 'releaf_matches_store';
 const LOCAL_STORAGE_KEY_INTERESTS = 'releaf_swiped_interests';
@@ -86,7 +77,7 @@ export function saveLocalInterest(bookId, interestType = 'interested') {
     const existing = list.filter(item => item.bookId !== bookId);
     existing.push({
       bookId,
-      type: interestType, // 'interested' or 'passed'
+      type: interestType,
       timestamp: new Date().toISOString()
     });
     localStorage.setItem(LOCAL_STORAGE_KEY_INTERESTS, JSON.stringify(existing));
@@ -95,7 +86,7 @@ export function saveLocalInterest(bookId, interestType = 'interested') {
   }
 }
 
-// Check if backend at http://localhost:5000/api is reachable
+// Check backend connectivity
 export async function checkBackendHealth() {
   try {
     const controller = new AbortController();
@@ -130,11 +121,9 @@ export async function fetchBooks(status = null) {
       throw new Error(`Server returned ${response.status}: ${response.statusText}`);
     }
     const data = await response.json();
-    // Normalize data if wrapped in { success, data }
     const items = Array.isArray(data) ? data : (data.books || data.data || []);
     return { data: items, isMock: false };
   } catch (error) {
-    console.warn(`[ReLeaf API] Fetching from ${url} failed (${error.message}). Using local store.`);
     const local = getLocalBooks();
     const filtered = status ? local.filter(b => b.status === status) : local;
     return { data: filtered, isMock: true, error: error.message };
@@ -142,8 +131,7 @@ export async function fetchBooks(status = null) {
 }
 
 // -------------------------------------------------------------------
-// 2. POST /listings/available
-// Fields: Book Title, Author, Edition, Condition, Price, Student Name, Contact
+// 2. POST /listings/available + Automatic Matching Trigger
 // -------------------------------------------------------------------
 export async function createAvailableListing(payload) {
   try {
@@ -164,9 +152,16 @@ export async function createAvailableListing(payload) {
       throw new Error(`Server returned ${response.status}: ${response.statusText}`);
     }
     const resData = await response.json();
-    return { data: resData, isMock: false, success: true };
+
+    // Trigger matching run endpoint automatically (Part 15)
+    try {
+      await fetch(`${API_BASE_URL}/matches/run`, { method: 'POST' });
+    } catch (e) {
+      // background match run
+    }
+
+    return { data: resData.data || resData, isMock: false, success: true };
   } catch (error) {
-    console.warn(`[ReLeaf API] POST /listings/available failed (${error.message}). Saved to local store.`);
     const newBook = {
       id: `book-local-${Date.now()}`,
       status: 'available',
@@ -200,8 +195,7 @@ export async function createAvailableListing(payload) {
 }
 
 // -------------------------------------------------------------------
-// 3. POST /listings/wanted
-// Fields: Book Title, Author, Edition, Student Name, Contact Information
+// 3. POST /listings/wanted + Automatic Matching Trigger
 // -------------------------------------------------------------------
 export async function createWantedListing(payload) {
   try {
@@ -222,9 +216,16 @@ export async function createWantedListing(payload) {
       throw new Error(`Server returned ${response.status}: ${response.statusText}`);
     }
     const resData = await response.json();
-    return { data: resData, isMock: false, success: true };
+
+    // Trigger matching run endpoint automatically (Part 15)
+    try {
+      await fetch(`${API_BASE_URL}/matches/run`, { method: 'POST' });
+    } catch (e) {
+      // background match run
+    }
+
+    return { data: resData.data || resData, isMock: false, success: true };
   } catch (error) {
-    console.warn(`[ReLeaf API] POST /listings/wanted failed (${error.message}). Saved to local store.`);
     const newWanted = {
       id: `wanted-local-${Date.now()}`,
       status: 'wanted',
@@ -254,14 +255,17 @@ export async function createWantedListing(payload) {
 }
 
 // -------------------------------------------------------------------
-// 4. GET /matches
-// Display confirmed matches returned from backend
+// 4. GET /matches (and trigger POST /matches/run)
 // -------------------------------------------------------------------
-export async function fetchMatches() {
+export async function fetchMatches(studentId = null) {
+  const url = studentId
+    ? `${API_BASE_URL}/matches/${encodeURIComponent(studentId)}`
+    : `${API_BASE_URL}/matches`;
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
-    const response = await fetch(`${API_BASE_URL}/matches`, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       signal: controller.signal
@@ -275,15 +279,28 @@ export async function fetchMatches() {
     const items = Array.isArray(data) ? data : (data.matches || data.data || []);
     return { data: items, isMock: false };
   } catch (error) {
-    console.warn(`[ReLeaf API] GET /matches failed (${error.message}). Using local store.`);
     const local = getLocalMatches();
     return { data: local, isMock: true, error: error.message };
   }
 }
 
 // -------------------------------------------------------------------
-// 5. Authentication Endpoints Integration Point
-// POST /auth/login & POST /auth/register
+// 5. POST /matches/run (Explicitly triggers matching service)
+// -------------------------------------------------------------------
+export async function runMatchingServiceApi() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/matches/run`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' }
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+// -------------------------------------------------------------------
+// 6. Authentication APIs
 // -------------------------------------------------------------------
 export async function loginUserApi(credentials) {
   try {
@@ -304,7 +321,6 @@ export async function loginUserApi(credentials) {
     const data = await response.json();
     return { success: true, data, isMock: false };
   } catch (error) {
-    // If backend endpoint is missing (404/ECONNREFUSED), notify caller
     return {
       success: false,
       error: error.message,
