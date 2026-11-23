@@ -305,7 +305,7 @@ export async function runMatchingServiceApi() {
 export async function loginUserApi(credentials) {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -314,17 +314,21 @@ export async function loginUserApi(credentials) {
     });
     clearTimeout(timeoutId);
 
+    const data = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      const errBody = await response.json().catch(() => ({}));
-      throw new Error(errBody.message || `Login failed with status ${response.status}`);
+      return {
+        success: false,
+        error: data.message || `Login failed with status ${response.status}`,
+        isBackendResponse: true
+      };
     }
-    const data = await response.json();
-    return { success: true, data, isMock: false };
+    return { success: true, data, isBackendResponse: true };
   } catch (error) {
     return {
       success: false,
       error: error.message,
-      isMissingEndpoint: true
+      isNetworkError: true
     };
   }
 }
@@ -332,7 +336,7 @@ export async function loginUserApi(credentials) {
 export async function registerUserApi(userData) {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -341,17 +345,21 @@ export async function registerUserApi(userData) {
     });
     clearTimeout(timeoutId);
 
+    const data = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      const errBody = await response.json().catch(() => ({}));
-      throw new Error(errBody.message || `Registration failed with status ${response.status}`);
+      return {
+        success: false,
+        error: data.message || `Registration failed with status ${response.status}`,
+        isBackendResponse: true
+      };
     }
-    const data = await response.json();
-    return { success: true, data, isMock: false };
+    return { success: true, data, isBackendResponse: true };
   } catch (error) {
     return {
       success: false,
       error: error.message,
-      isMissingEndpoint: true
+      isNetworkError: true
     };
   }
 }

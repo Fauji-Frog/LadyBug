@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
-  const [identifier, setIdentifier] = useState('rowan.greenleaf@university.edu');
-  const [password, setPassword] = useState('studentPass2026');
+  // Fresh, clean inputs with NO demo data
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [infoMessage, setInfoMessage] = useState(location.state?.message || '');
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSent, setForgotSent] = useState(false);
@@ -98,6 +101,22 @@ export default function LoginPage() {
             Log in to manage your campus textbooks and matches.
           </p>
         </div>
+
+        {/* Info Message (e.g. from registration) */}
+        {infoMessage && (
+          <div style={{
+            backgroundColor: '#EBF5EE',
+            border: '1px solid #BDE3CA',
+            color: '#1E4620',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.85rem',
+            marginBottom: '1.25rem',
+            fontWeight: 500
+          }}>
+            ✓ {infoMessage}
+          </div>
+        )}
 
         {/* Server Error Alert */}
         {serverError && (
@@ -212,20 +231,6 @@ export default function LoginPage() {
           >
             {isSubmitting ? 'Authenticating...' : 'Log In to ReLeaf'}
           </button>
-
-          {/* Demo Note */}
-          <div style={{
-            backgroundColor: 'var(--color-warm-cream)',
-            border: '1px dashed var(--color-card-border)',
-            borderRadius: 'var(--radius-md)',
-            padding: '0.75rem',
-            textAlign: 'center',
-            fontSize: '0.78rem',
-            color: 'var(--color-espresso-subtle)',
-            marginBottom: '1.25rem'
-          }}>
-            🎓 <strong>Preview Note:</strong> Demo student credentials are prefilled. Click <em>Log In to ReLeaf</em> to instantly explore the authenticated dashboard and swipe discovery.
-          </div>
 
           {/* Link to Registration */}
           <div style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--color-dark-espresso-muted)' }}>

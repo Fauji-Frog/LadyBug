@@ -88,7 +88,11 @@ export default function RegisterPage() {
     try {
       const res = await register(formData);
       if (res.success) {
-        navigate('/');
+        navigate('/login', {
+          state: {
+            message: 'Student account created successfully! Please enter your credentials to log in.'
+          }
+        });
       } else {
         setServerError(res.error || 'Registration failed. Please check your information.');
       }
