@@ -80,13 +80,13 @@ export default function ProfilePage() {
               boxShadow: '0 4px 15px rgba(52, 78, 65, 0.25)',
               border: '4px solid var(--color-warm-cream)'
             }}>
-              {currentUser?.fullName?.charAt(0) || 'R'}
+              {(currentUser?.fullName || currentUser?.name || 'S').charAt(0).toUpperCase()}
             </div>
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', color: 'var(--color-dark-espresso)' }}>
-                  {currentUser?.fullName}
+                  {currentUser?.fullName || currentUser?.name || 'Student'}
                 </h1>
                 <span className="badge badge-green">✓ Verified Campus Member</span>
               </div>

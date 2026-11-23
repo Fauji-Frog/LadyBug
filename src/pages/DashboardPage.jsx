@@ -86,7 +86,7 @@ export default function DashboardPage() {
             lineHeight: 1.2,
             marginBottom: '0.6rem'
           }}>
-            Hello, {currentUser?.fullName || 'Student'}!
+            Hello, {currentUser?.fullName || currentUser?.name || 'Student'}!
           </h1>
           <p style={{
             fontSize: '1.1rem',

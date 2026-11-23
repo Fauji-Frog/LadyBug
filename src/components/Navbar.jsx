@@ -133,7 +133,7 @@ export default function Navbar() {
                     fontWeight: 700,
                     fontSize: '0.85rem'
                   }}>
-                    {currentUser?.fullName?.charAt(0) || 'S'}
+                    {(currentUser?.fullName || currentUser?.name || 'S').charAt(0).toUpperCase()}
                   </div>
                   <span className="hide-mobile" style={{
                     fontSize: '0.85rem',
@@ -144,7 +144,7 @@ export default function Navbar() {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                   }}>
-                    {currentUser?.fullName?.split(' ')[0] || 'Student'}
+                    {(currentUser?.fullName || currentUser?.name || 'Student').split(' ')[0]}
                   </span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="6 9 12 15 18 9" />

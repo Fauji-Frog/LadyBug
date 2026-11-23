@@ -75,7 +75,18 @@ export function AuthProvider({ children }) {
     if (isBackendOnline) {
       const res = await loginUserApi({ identifier: cleanId, password: cleanPass });
       if (res.success && res.data) {
-        const userData = res.data.user || res.data;
+        const rawUser = res.data.user || res.data;
+        const profile = res.data.profile || {};
+        const userData = {
+          ...rawUser,
+          ...profile,
+          fullName: rawUser.fullName || rawUser.name || 'Student',
+          name: rawUser.name || rawUser.fullName || 'Student',
+          studentId: profile.studentId || rawUser.studentId || '',
+          department: profile.department || rawUser.department || 'Computer Science',
+          batch: profile.batch || rawUser.batch || 'Class of 2026',
+          contact: profile.contact || rawUser.contact || rawUser.phone || ''
+        };
         const userToken = res.data.token || `releaf-jwt-${userData.id || Date.now()}`;
         setCurrentUser(userData);
         setToken(userToken);
@@ -134,7 +145,18 @@ export function AuthProvider({ children }) {
     if (isBackendOnline) {
       const res = await registerUserApi(studentData);
       if (res.success && res.data) {
-        const userData = res.data.user || res.data;
+        const rawUser = res.data.user || res.data;
+        const profile = res.data.profile || {};
+        const userData = {
+          ...rawUser,
+          ...profile,
+          fullName: rawUser.fullName || rawUser.name || studentData.fullName,
+          name: rawUser.name || rawUser.fullName || studentData.fullName,
+          studentId: profile.studentId || rawUser.studentId || studentData.studentId,
+          department: profile.department || rawUser.department || studentData.department,
+          batch: profile.batch || rawUser.batch || studentData.batch,
+          contact: profile.contact || rawUser.contact || studentData.phone
+        };
         saveStoredUser({ ...userData, password: cleanPass });
         return { success: true, isBackend: true };
       }
