@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
-import BackendStatusBar from './components/BackendStatusBar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -18,6 +17,7 @@ import { useAuth } from './context/AuthContext';
 import './styles/index.css';
 import './styles/pages.css';
 import './styles/swipe.css';
+import './styles/3d-effects.css';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -33,9 +33,6 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* Backend Connectivity Status Bar */}
-      <BackendStatusBar />
-
       {/* Main Top Navigation */}
       <Navbar />
 
